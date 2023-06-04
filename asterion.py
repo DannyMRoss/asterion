@@ -12,6 +12,7 @@ class Asterion(pygame.sprite.Sprite):
         self.xv = xv
         self.yv = yv
         self.image = pygame.image.load(img_path).convert_alpha()
+        self.rect = self.image.get_rect()
         self.speed = speed
         self.g = g
         self.jf = jf
@@ -32,6 +33,10 @@ class Asterion(pygame.sprite.Sprite):
         
         if self.y <= 0:
             self.y = 0
+
+    def platform(self, walls):
+        pygame.sprite.spritecollideany(self, walls)
+
         
     def keys(self):
         key = pygame.key.get_pressed()
