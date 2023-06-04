@@ -3,7 +3,7 @@ import pygame.display
 import os
 
 
-#infoObject = pygame.display.Info()
+
 SCREEN_WIDTH=1440
 SCREEN_HEIGHT=900
 BLACK=(0,0,0)
@@ -14,10 +14,8 @@ pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Asterion")
 
-asterion = Asterion()
-asterion.x = SCREEN_WIDTH / 2
-#transColor = asterion.image.get_at((0,0))
-#asterion.image.set_colorkey(transColor)
+asterion = Asterion("sprites/a.png", screen, 0, 0, 0, 0, 1, 20, 10)
+
 
 clock = pygame.time.Clock()
 
@@ -29,7 +27,7 @@ while running:
             running = False
 
     asterion.keys()
-    asterion.gravity()
+    asterion.physics()
 
     screen.fill((SCREEN_BG)) 
     asterion.draw(screen) 
