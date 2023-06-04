@@ -3,7 +3,7 @@ import pygame.display
 import os
 
 class Asterion(pygame.sprite.Sprite):
-    def __init__(self, img_path, screen, x, y, xv, yv, g, jf, speed):
+    def __init__(self, img_path, screen, x, y, xv, yv, g, jf, speed, floor):
         pygame.sprite.Sprite.__init__(self)
 
         self.screen = screen
@@ -15,9 +15,10 @@ class Asterion(pygame.sprite.Sprite):
         self.speed = speed
         self.g = g
         self.jf = jf
+        self.floor=floor
 
     def jump(self):
-        if self.y == FLOOR:
+        if self.y == self.floor:
             self.yv = -self.jf
 
     def physics(self):
@@ -25,8 +26,8 @@ class Asterion(pygame.sprite.Sprite):
         self.y += self.yv
         self.yv += self.g
         
-        if self.y > FLOOR:
-            self.y = FLOOR
+        if self.y > self.floor:
+            self.y = self.floor
             self.yv = 0
         
         if self.y <= 0:

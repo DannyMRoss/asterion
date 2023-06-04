@@ -10,9 +10,9 @@ class Wall(pygame.sprite.Sprite):
         self.w = w
         self.color = color
         self.screen = screen
-        self.image = pygame.Surface([width, height])
+        self.image = pygame.Surface([w, h])
         self.image.fill(color)
         self.rect = self.image.get_rect()
 
     def draw(self):
-        pygame.draw.rect(self.screen, self.color, [self.x, self.y, self.width, self.height], 0)
+        pygame.draw.rect(self.screen, self.color, self.rect)
