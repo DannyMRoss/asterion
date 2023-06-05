@@ -28,13 +28,7 @@ class Asterion(pygame.sprite.Sprite):
         self.shorthop = 5
         self.onplatform=False
         self.prevkey = pygame.key.get_pressed()
-
-    # @staticmethod
-    # def get_platform(collidelist):
-    #         for wall in collidelist:
-    #             if wall.platform:
-    #                 return wall
-                
+  
     @staticmethod
     def get_min_platform(collidelist):
             min_platform = collidelist[0]
@@ -42,17 +36,10 @@ class Asterion(pygame.sprite.Sprite):
                 if p.rect.top > min_platform.rect.top:
                     min_platform = p
             return min_platform
-                
-    # @staticmethod
-    # def get_wall(collidelist):
-    #         for wall in collidelist:
-    #             if not wall.platform:
-    #                 return wall
 
     def collisiony(self, platforms, x, y):
         self.rect.move_ip([x,y])
         collided = pygame.sprite.spritecollide(self, platforms, False)
-        #platform = Asterion.get_platform(collided)
         self.rect.move_ip([-x,-y])
         if collided == []:
             return False
@@ -174,36 +161,4 @@ while running:
     pygame.display.update()
 
     clock.tick(60)
-
-
-# asterion.rect.centerx <= platform.rect.left or asterion.rect.centerx >= platform.rect.right
-
-# # # walls.add(Wall(206, 0, 10, SCREEN_HEIGHT, BLACK, screen, False))
-# # walls.add(Wall(0, 319, SCREEN_WIDTH, 10, BLACK, screen, True))
-
-# pygame.sprite.spritecollideany(asterion, walls) == None
-# collided = pygame.sprite.spritecollide(asterion, walls, False)
-# platform = Asterion.get_platform(collided)
-
-# def get_platform(collidelist):
-#         for wall in collidelist:
-#             if wall.platform:
-#                 return wall
-            
-
-# c = pygame.sprite.spritecollide(asterion, walls, False)
-# c
-# print(c)
-
-# for x in range(0,1440,360):
-#     walls.add(Wall(x, 500, 100, 10, BLACK, screen))
-
-# for x in range(180,1440,360):
-#     walls.add(Wall(x, 600, 100, 10, BLACK, screen))
-
-# walls.add(Wall(1000, 0, 10, SCREEN_HEIGHT, BLACK, screen))
-# #walls.add(Wall(0, 0, SCREEN_WIDTH, 20, BLACK, screen))
-# walls.add(Wall(0, 0, 20, SCREEN_HEIGHT, BLACK, screen))
-# walls.add(Wall(0, 800, SCREEN_WIDTH, 20, BLACK, screen))
-
-
+    
