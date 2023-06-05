@@ -2,6 +2,10 @@ import pygame
 import pygame.display
 import os
 import numpy as np
+import pandas as pd
+import random
+import igraph as ig
+
 
 # global constants
 SCREEN_WIDTH=1440
@@ -9,19 +13,19 @@ SCREEN_HEIGHT=900
 BLACK=(0,0,0)
 SCREEN_BG=(50,50,50)
 FLOOR=SCREEN_HEIGHT-500
+WALL_BUFFER=50
 
 class Asterion(pygame.sprite.Sprite):
     def __init__(self, img_path, screen, x, y, xv, yv, g, jf, speed):
         pygame.sprite.Sprite.__init__(self)
 
         self.screen = screen
-        self.x = x
-        self.y = y
         self.xv = xv
         self.yv = yv
         self.image = pygame.image.load(img_path).convert_alpha()
+        self.image.set_colorkey(self.image.get_at((0,0)))
         self.rect = self.image.get_rect()
-        self.rect.center = [x, y]
+        self.rect.move_ip([x,y])
         self.speed = speed
         self.g = g
         self.jf = jf
@@ -37,6 +41,15 @@ class Asterion(pygame.sprite.Sprite):
                     min_platform = p
             return min_platform
 
+    def get_closest_wall(self, collidelist):
+            closest_wall = collidelist[0]
+            closest_wall_dist = abs(self.rect.centerx - closest_wall.rect.centerx)
+            for w in collidelist:
+                if abs(self.rect.centerx - closest_wall.rect.centerx) < closest_wall_dist:
+                    closest_wall = w
+            return closest_wall
+    
+    
     def collisiony(self, platforms, x, y):
         self.rect.move_ip([x,y])
         collided = pygame.sprite.spritecollide(self, platforms, False)
@@ -57,6 +70,9 @@ class Asterion(pygame.sprite.Sprite):
         self.rect.move_ip([-x,-y])
         if collided == []:
             return False
+        # closestwall = self.get_closest_wall(collided)
+        # if (abs(self.rect.centerx - closestwall.rect.centerx) > WALL_BUFFER):
+        #     return False
         else:
             return True
 
@@ -131,10 +147,11 @@ pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Asterion")
 
-asterion = Asterion("sprites/a.png", screen, 103, 160, 0, 0, 1, 20, 10)
+asterion = Asterion("sprites/a0.png", screen, 300, 160, 0, 0, 1, 20, 10)
 walls = pygame.sprite.Group()
 platforms = pygame.sprite.Group()
 
+walls.add(Wall(50, 0, 10, SCREEN_HEIGHT, BLACK, screen, False))
 walls.add(Wall(1200, 0, 10, SCREEN_HEIGHT, BLACK, screen, False))
 platforms.add(Wall(700, 400, 600, 10, BLACK, screen, True))
 for x in range(360,1440,360):
