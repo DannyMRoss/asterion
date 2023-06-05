@@ -16,10 +16,13 @@ class Asterion(pygame.sprite.Sprite):
         self.speed = speed
         self.g = g
         self.jf = jf
-        self.floor=floor
+        self.onwall=False
+
+    def collision(self, walls):
+        self.onwall = pygame.sprite.spritecollideany(self, walls)
 
     def jump(self):
-        if self.y == self.floor:
+        if self.onwall:
             self.yv = -self.jf
 
     def physics(self):
@@ -27,7 +30,7 @@ class Asterion(pygame.sprite.Sprite):
         self.y += self.yv
         self.yv += self.g
         
-        if self.y > self.floor:
+        if self.onwall:
             self.y = self.floor
             self.yv = 0
         
