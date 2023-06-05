@@ -29,36 +29,32 @@ class Asterion(pygame.sprite.Sprite):
         self.onplatform=False
         self.prevkey = pygame.key.get_pressed()
 
-    @staticmethod
-    def get_platform(collidelist):
-            for wall in collidelist:
-                if wall.platform:
-                    return wall
+    # @staticmethod
+    # def get_platform(collidelist):
+    #         for wall in collidelist:
+    #             if wall.platform:
+    #                 return wall
                 
     @staticmethod
     def get_min_platform(collidelist):
-            platforms = []
-            for wall in collidelist:
-                if wall.platform:
-                    platforms.append(wall)
-            min_platform = platforms[0]
-            for p in platforms:
+            min_platform = collidelist[0]
+            for p in collidelist:
                 if p.rect.top > min_platform.rect.top:
                     min_platform = p
             return min_platform
                 
-    @staticmethod
-    def get_wall(collidelist):
-            for wall in collidelist:
-                if not wall.platform:
-                    return wall
+    # @staticmethod
+    # def get_wall(collidelist):
+    #         for wall in collidelist:
+    #             if not wall.platform:
+    #                 return wall
 
-    def collisiony(self, walls, x, y):
+    def collisiony(self, platforms, x, y):
         self.rect.move_ip([x,y])
-        collided = pygame.sprite.spritecollide(self, walls, False)
-        platform = Asterion.get_platform(collided)
+        collided = pygame.sprite.spritecollide(self, platforms, False)
+        #platform = Asterion.get_platform(collided)
         self.rect.move_ip([-x,-y])
-        if platform == None:
+        if collided == []:
             return False
         minplatform = Asterion.get_min_platform(collided)
         if self.rect.bottom > minplatform.rect.top:
@@ -71,18 +67,17 @@ class Asterion(pygame.sprite.Sprite):
     def collisionx(self, walls, x, y):
         self.rect.move_ip([x,y])
         collided = pygame.sprite.spritecollide(self, walls, False)
-        wall = Asterion.get_wall(collided)
         self.rect.move_ip([-x,-y])
-        if wall == None:
+        if collided == []:
             return False
         else:
             return True
 
-    def move(self, walls, x, y):
+    def move(self, walls, platforms, x, y):
         dx = x
         dy = y
 
-        while self.collisiony(walls, 0, dy):
+        while self.collisiony(platforms, 0, dy):
             dy -= np.sign(dy)
 
         while self.collisionx(walls, dx, 0):
@@ -111,8 +106,8 @@ class Asterion(pygame.sprite.Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect)
 
-    def update(self, walls):
-        self.onplatform = self.collisiony(walls, 0, 1)
+    def update(self, walls, platforms):
+        self.onplatform = self.collisiony(platforms, 0, 1)
         self.keys()
 
         if not self.onplatform:
@@ -121,7 +116,7 @@ class Asterion(pygame.sprite.Sprite):
         if self.yv > 0 and self.onplatform:
             self.yv = 0
 
-        self.move(walls, self.xv, self.yv)
+        self.move(walls, platforms,  self.xv, self.yv)
 
 
 class Wall(pygame.sprite.Sprite):
@@ -151,13 +146,14 @@ pygame.display.set_caption("Asterion")
 
 asterion = Asterion("sprites/a.png", screen, 103, 160, 0, 0, 1, 20, 10)
 walls = pygame.sprite.Group()
+platforms = pygame.sprite.Group()
 
 walls.add(Wall(1200, 0, 10, SCREEN_HEIGHT, BLACK, screen, False))
-walls.add(Wall(700, 400, 600, 10, BLACK, screen, True))
+platforms.add(Wall(700, 400, 600, 10, BLACK, screen, True))
 for x in range(360,1440,360):
-     walls.add(Wall(x, 600, 100, 10, BLACK, screen, True))
+     platforms.add(Wall(x, 600, 100, 10, BLACK, screen, True))
 
-walls.add(Wall(0, 700, SCREEN_WIDTH, 10, BLACK, screen, True))
+platforms.add(Wall(0, 700, SCREEN_WIDTH, 10, BLACK, screen, True))
 
 #walls.add(Wall(0, 319, 102, 10, BLACK, screen, True))
 
@@ -169,10 +165,11 @@ while running:
             pygame.quit()
             running = False
 
-    asterion.update(walls)
+    asterion.update(walls, platforms)
     
     screen.fill((SCREEN_BG)) 
     walls.draw(screen)
+    platforms.draw(screen)
     asterion.draw(screen)
     pygame.display.update()
 
