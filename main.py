@@ -25,9 +25,9 @@ class Asterion(pygame.sprite.Sprite):
         self.speed = speed
         self.g = g
         self.jf = jf
+        self.shorthop = 5
         self.onplatform=False
-        self.JUMP=False
-        self.maxjump=20
+        self.prevkey = pygame.key.get_pressed()
 
     @staticmethod
     def get_platform(collidelist):
@@ -99,9 +99,14 @@ class Asterion(pygame.sprite.Sprite):
             self.xv=self.speed
         elif key[pygame.K_LEFT]:
             self.xv=-self.speed
-        if self.JUMP and self.onplatform:
+        if key[pygame.K_SPACE] and self.onplatform:
             self.yv = -self.jf
-            self.JUMP = False
+
+        if self.prevkey[pygame.K_SPACE] and not key[pygame.K_SPACE]:
+            if self.yv < -self.shorthop:
+                self.yv = -self.shorthop
+
+        self.prevkey = key
         
     def draw(self, surface):
         surface.blit(self.image, self.rect)
@@ -163,14 +168,6 @@ while running:
         if event.type == pygame.QUIT:
             pygame.quit()
             running = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                sp_start = pygame.time.get_ticks()
-        if event.type == pygame.KEYUP:
-             if event.key == pygame.K_SPACE:
-                sp_time = pygame.time.get_ticks() - sp_start
-                asterion.jf = min(max(10, sp_time // 20),asterion.maxjump)
-                asterion.JUMP = True
 
     asterion.update(walls)
     
