@@ -29,7 +29,9 @@ sp_edge_df = sp_edge_df.loc[sp_edge_df['path'],:]
 sp_edge_df['st'] = list(zip(sp_edge_df['source'], sp_edge_df['target']))
 sp_verts = list(sp_edge_df['st'])
 
-def in_sp(v): return tuple(v) in sp_verts
+def in_sp(v): 
+    return tuple(v) in sp_verts
+
 edges['path'] = edges['st'].apply(in_sp)
 
 sp = mstree.get_shortest_paths(0,, output="epath")
