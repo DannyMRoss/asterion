@@ -8,23 +8,27 @@ import igraph as ig
 
 
 # global constants
-SCREEN_WIDTH=1440
-SCREEN_HEIGHT=900
+SCREEN_WIDTH=1000
+SCREEN_HEIGHT=800
 WC=10
 BLACK=(0,0,0)
-RED=(255,0,0)
+RED=(136,8,8)
+WHITE=(196,170,35,10)
+GREY=(52,60,36)
 SCREEN_BG=(50,50,50)
 
 class Asterion(pygame.sprite.Sprite):
-    def __init__(self, img_path, screen, x, y, xv, yv, g, jf, speed):
+    def __init__(self, img_path, screen, x, y, xv, yv, g, jf, speed, scale):
         pygame.sprite.Sprite.__init__(self)
 
         self.screen = screen
         self.xv = xv
         self.yv = yv
         self.image = pygame.image.load(img_path).convert_alpha()
+        self.image = pygame.transform.scale_by(self.image, scale)
         self.image.set_colorkey(self.image.get_at((0,0)))
         self.rect = self.image.get_rect()
+        #self.rect.scale_by_ip(scale)
         self.rect.move_ip([x,y])
         self.speed = speed
         self.g = g
@@ -59,10 +63,16 @@ class Asterion(pygame.sprite.Sprite):
         minplatform = Asterion.get_min_platform(collided)
         if self.rect.bottom > minplatform.rect.top:
             return False
-        elif (self.rect.centerx <= minplatform.rect.left or self.rect.centerx >= minplatform.rect.right):
-            return False
+        # elif (self.rect.centerx <= minplatform.rect.left or self.rect.centerx >= minplatform.rect.right):
+        #     return False
         else:
             return True
+
+    def collidesprite(self, sprite, x, y):
+        self.rect.move_ip([x,y])
+        collided = pygame.sprite.collide_rect(self, sprite)
+        self.rect.move_ip([-x,-y])
+        return collided
 
     def collisionx(self, walls, x, y):
         self.rect.move_ip([x,y])
@@ -70,7 +80,10 @@ class Asterion(pygame.sprite.Sprite):
         self.rect.move_ip([-x,-y])
         if collided == []:
             return False
-        # closestwall = self.get_closest_wall(collided)
+        closestwall = self.get_closest_wall(collided)
+        if self.collidesprite(closestwall, 0, 1) or self.collidesprite(closestwall, 0, -1):
+            return False
+        # if self.
         # if (abs(self.rect.centerx - closestwall.rect.centerx) > WALL_BUFFER):
         #     return False
         else:
@@ -122,7 +135,7 @@ class Asterion(pygame.sprite.Sprite):
         self.move(walls, platforms, self.xv, self.yv)
 
 class Wall(pygame.sprite.Sprite):
-    def __init__(self, x, y, w, h, color, screen):
+    def __init__(self, x, y, w, h, color, alpha, screen):
 
         pygame.sprite.Sprite.__init__(self)
         self.x = x
@@ -133,6 +146,7 @@ class Wall(pygame.sprite.Sprite):
         self.screen = screen
         self.image = pygame.Surface([self.w, self.h])
         self.image.fill(self.color)
+        self.image.set_alpha(alpha)
         self.rect = self.image.get_rect()
         self.rect.left = self.x
         self.rect.top = self.y
@@ -150,7 +164,6 @@ class Maze(pygame.sprite.Sprite):
         self.path = pd.DataFrame()
         self.platforms = pd.DataFrame()
         self.walls = pd.DataFrame()
-        self.boundaries = pygame.sprite.Group()
         self.pathgroup = pygame.sprite.Group()
         self.wallgroup = pygame.sprite.Group()
         self.platformgroup = pygame.sprite.Group()
@@ -224,7 +237,7 @@ class Maze(pygame.sprite.Sprite):
         mst["width"] = np.where(mst['source_x']!=mst['target_x'], PW, self.WC)
         mst["height"] = np.where(mst['source_x']!=mst['target_x'], self.WC, WH+self.WC)
 
-        self.path = mst.loc[mst['path']]
+        self.path = mst.loc[mst['mst']]
         self.path = self.path.reset_index()
         self.platforms = maze.loc[maze['Platform']]
         self.platforms = self.platforms.reset_index()
@@ -232,30 +245,31 @@ class Maze(pygame.sprite.Sprite):
         self.walls = self.walls.reset_index()
 
         for index, i in self.platforms.iterrows():
-            self.platformgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.platformcolor, self.screen))
+            self.platformgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.platformcolor, 255, self.screen))
 
         for index, i in self.walls.iterrows():
-            self.wallgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.wallcolor, self.screen))
+            self.wallgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.wallcolor, 255, self.screen))
 
         for index, i in self.path.iterrows():
-            self.pathgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.pathcolor, self.screen)) 
+            self.pathgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.pathcolor, 100, self.screen)) 
 
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Asterion")
 
-boundaries = pygame.sprite.Group()
-# boundaries.add(Wall(0,0,SCREEN_WIDTH,WC,(0,0,0),screen))
-# boundaries.add(Wall(0,0,WC,SCREEN_HEIGHT,(0,0,0),screen))
 
-#boundaries.add(Wall(SCREEN_WIDTH-WC,0,WC,SCREEN_HEIGHT,(0,0,0),screen))
 
-maze = Maze(10, WC, BLACK, BLACK, RED, screen)
+maze = Maze(7, WC, RED, RED, GREY, screen)
 maze.buildmaze()
-maze.platformgroup.add(Wall(0,SCREEN_HEIGHT-WC,SCREEN_WIDTH,WC,(0,0,0),screen))
 
-asterion = Asterion("sprites/a0.png", screen, WC+WC, SCREEN_HEIGHT-WC-WC, 0, 0, 1, 20, 10) 
+maze.platformgroup.add(Wall(0,SCREEN_HEIGHT-WC,SCREEN_WIDTH,WC,GREY,255, screen))
+maze.wallgroup.add(Wall(0,0,SCREEN_WIDTH,WC,GREY,255, screen))
+maze.wallgroup.add(Wall(0,0,WC,SCREEN_HEIGHT,GREY,255, screen))
+maze.wallgroup.add(Wall(SCREEN_WIDTH-WC,0,WC,SCREEN_HEIGHT,GREY,255, screen))
+
+scale=.3
+asterion = Asterion("sprites/a0.png", screen, WC+WC, SCREEN_HEIGHT-(200)-WC, 0, 0, 1, 20, 10, scale) 
 
 clock = pygame.time.Clock()
 running=True
@@ -267,8 +281,7 @@ while running:
     
     asterion.update(maze.wallgroup, maze.platformgroup)
 
-    screen.fill((255,255,255))
-    boundaries.draw(screen)
+    screen.fill(BLACK)
     maze.pathgroup.draw(screen)
     maze.platformgroup.draw(screen)
     maze.wallgroup.draw(screen)
@@ -276,3 +289,14 @@ while running:
     pygame.display.update()
 
     clock.tick(60)
+
+
+
+# asterion.rect.move_ip([1,0])
+# collided = pygame.sprite.spritecollide(asterion, maze.wallgroup, False)
+# asterion.rect.move_ip([-1,0])
+# closest_wall = asterion.get_closest_wall(collided)
+# closest_wall
+
+# asterion.rect.move_ip([0,1])
+# pygame.sprite.collide_rect(asterion, closest_wall)
