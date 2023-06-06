@@ -4,12 +4,12 @@ import pandas as pd
 import random
 import igraph as ig
 
-dim=10
+dim=100
 SCREEN_WIDTH=1400
 SCREEN_HEIGHT=900
 PW = SCREEN_WIDTH / dim
 WH = SCREEN_HEIGHT / dim
-WC=10
+WC=1
 g = ig.Graph.Lattice([dim,dim], circular=False)
 
 vdf = g.get_vertex_dataframe()
