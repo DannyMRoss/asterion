@@ -7,7 +7,7 @@ import random
 import igraph as ig
 
 
-# global constants
+# constants
 SCREEN_WIDTH=1000
 SCREEN_HEIGHT=800
 DIM=7
@@ -268,7 +268,7 @@ maze = Maze(DIM, WC, RED, RED, GREY, screen)
 maze.buildmaze()
 
 maze.platformgroup.add(Wall(0,SCREEN_HEIGHT-WC,SCREEN_WIDTH,WC,GREY,255, screen))
-maze.wallgroup.add(Wall(0,0,SCREEN_WIDTH,WC,GREY,255, screen))
+maze.platformgroup.add(Wall(0,0,SCREEN_WIDTH,WC,GREY,255, screen))
 maze.wallgroup.add(Wall(0,0,WC,SCREEN_HEIGHT,GREY,255, screen))
 maze.wallgroup.add(Wall(SCREEN_WIDTH-WC,0,WC,SCREEN_HEIGHT,GREY,255, screen))
 
