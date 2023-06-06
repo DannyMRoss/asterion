@@ -3,16 +3,86 @@ import pandas as pd
 import random
 import igraph as ig
 
-dim=5
-vertex_df = pd.DataFrame({'ID':np.arange(0,dim**2),
-                          'xID':np.repeat(np.arange(0,dim),dim),
-                          'yID':np.tile(np.arange(0,dim),dim)})
+class Maze(object):
+    """Maze Class"""
+    
+    def __init__(self, dim):
+        self.dim = dim
+        self.g = ig.Graph.Lattice([dim,dim], circular=False)
+        self.g_vertex_df = pd.DataFrame()
+        self.g_edge_df = pd.DataFrame()
+        self.wall_df = pd.DataFrame()
+      
+    def buildMaze(self):
+        self.g.es["weight"] = [random.randint(1, 77) for _ in self.g.es]
+        
+        mst = self.g.spanning_tree(weights=self.g.es["weight"], return_tree=False)
+    
+        self.g_vertex_df = self.g.get_vertex_dataframe()
+        self.g_vertex_df.index.names = ['vertexid']
+        self.g_vertex_df['vertex'] = self.g_vertex_df.index
+        
+        def get_x(v, d): return v % d
+    
+        def get_y(v, d): return (v // d) % d
 
+        def get_z(v, d): 
+            for i in range(d): 
+                if v < ((d**2) * (i+1)): 
+                    return i
+                
+        # def get_cartesian_coords(v, d):
+        #     x = get_x(v, d)
+        #     y = get_y(v, d)
+        #     return (x, y)
+                
+        self.g_vertex_df['x'] = self.g_vertex_df['vertex'].apply(get_x, d=self.dim)
+        self.g_vertex_df['y'] = self.g_vertex_df['vertex'].apply(get_y, d=self.dim)
+        self.g_vertex_df['z'] = self.g_vertex_df['vertex'].apply(get_z, d=self.dim)
+        
+        self.g_edge_df = pd.DataFrame(self.g.get_edge_dataframe())
+        self.g_edge_df.index.names = ['edge']
+        self.g_edge_df.columns = ['a', 'b', 'w']
+        self.g_edge_df["ab"] = list(zip(self.g_edge_df['a'], self.g_edge_df['b']))
+        
+        self.g_edge_df['mst'] = self.g_edge_df.index.isin(mst)
+
+        mst_edges = self.g_edge_df.loc[self.g_edge_df['mst'], ['a', 'b']]
+        mst_edges = list(zip(mst_edges['a'], mst_edges['b']))
+        
+        sp = ig.Graph([self.dim, self.dim, self.dim], edges=mst_edges)
+        shortest_path = sp.get_shortest_paths(0,(self.dim**3)-1, output="epath")
+        
+        sp_edge_df = sp.get_edge_dataframe()
+        sp_edge_df['path'] = sp_edge_df.index.isin(shortest_path[0])
+        sp_edge_df = sp_edge_df.loc[sp_edge_df['path'],:]
+
+        sp_edge_df['ab'] = list(zip(sp_edge_df['source'], sp_edge_df['target']))
+        sp_verts = list(sp_edge_df['ab'])
+
+        def in_sp(v): return v in sp_verts
+
+        self.g_edge_df['path'] = self.g_edge_df['ab'].apply(in_sp)
+
+        self.g_edge_df['a_xyz'] = self.g_edge_df['a'].apply(get_cartesian_coords, d=self.dim)
+        self.g_edge_df['b_xyz'] = self.g_edge_df['b'].apply(get_cartesian_coords, d=self.dim)
+
+
+dim=5
 g = ig.Graph.Lattice([dim,dim], circular=False)
+
+vdf = g.get_vertex_dataframe()
+vdf.index.names = ['vertexid']
+vdf['vertex'] = vdf.index
+        
+vdf['x'] = np.repeat(np.arange(0,dim),dim)
+vdf['y'] = np.tile(np.arange(0,dim),dim)
+
 edges = g.get_edge_dataframe()
 edges['eid'] = edges.index
 edges['st'] = list(zip(edges['source'], edges['target']))
 edges['st'] = edges['st'].apply(sorted)
+
 
 g.es["weight"] = [random.randint(1, 77) for _ in g.es]     
 mst = g.spanning_tree(weights=g.es["weight"], return_tree=False)
@@ -20,7 +90,7 @@ g.spanning_tree(weights=g.es["weight"], return_tree=True).get_edge_dataframe()
 
 edges['mst'] = edges.index.isin(mst)
 mstedges = edges.loc[edges['mst'], ['st']]['st']
-sp = ig.Graph(dim**2 - 1, edges=mstedges)
+sp = ig.Graph([dim, dim], edges=mstedges)
 shortest_path = sp.get_shortest_paths(0,dim**2-1, output="epath")
 
 sp_edge_df = sp.get_edge_dataframe()
@@ -29,21 +99,33 @@ sp_edge_df = sp_edge_df.loc[sp_edge_df['path'],:]
 sp_edge_df['st'] = list(zip(sp_edge_df['source'], sp_edge_df['target']))
 sp_verts = list(sp_edge_df['st'])
 
-def in_sp(v): return tuple(v) in sp_verts
+def in_sp(v): 
+    return tuple(v) in sp_verts
 edges['path'] = edges['st'].apply(in_sp)
 
-sp = mstree.get_shortest_paths(0,, output="epath")
+edges = pd.merge(edges, vdf, how='left', left_on='source', right_on='vertex')
+edges = edges.rename(columns={'x': 'source_x', 'y': 'source_y'})
+edges = pd.merge(edges, vdf, how='left', left_on='target', right_on='vertex')
+edges = edges.rename(columns={'x': 'target_x', 'y': 'target_y'})
+edges = edges.drop(columns=['vertex_x', 'vertex_y'])
 
-mst_edges = edge_pairs.loc[edge_pairs['mst'], ['ab']]  
-mst_edges = mst_edges['ab']
-sp = ig.Graph((vertex_per_circle*circles) + 1, edges=mst_edges)
-shortest_path = sp.get_shortest_paths(0,(vertex_per_circle*(circles-1)) + 1, output="vpath")
+walls = edges.loc[~edges['mst'],]
+walls["Platform"] = np.where(walls['source_x']==walls['target_x'], True, False)
+walls["walla_x"] = walls["source_x"]
+walls["wallb_x"] = walls["target_x"]
+walls.loc[walls["Platform"],]
+# sp = mstree.get_shortest_paths(0,, output="epath")
 
-sp_edge_df = sp.get_edge_dataframe()
-sp_edge_df['path'] = sp_edge_df.index.isin(shortest_path[0])
-sp_edge_df = sp_edge_df.loc[sp_edge_df['path'],:]
-sp_edge_df['ab'] = list(zip(sp_edge_df['source'], sp_edge_df['target']))
-sp_verts = list(sp_edge_df['ab'])
+# mst_edges = edge_pairs.loc[edge_pairs['mst'], ['ab']]  
+# mst_edges = mst_edges['ab']
+# sp = ig.Graph((vertex_per_circle*circles) + 1, edges=mst_edges)
+# shortest_path = sp.get_shortest_paths(0,(vertex_per_circle*(circles-1)) + 1, output="vpath")
+
+# sp_edge_df = sp.get_edge_dataframe()
+# sp_edge_df['path'] = sp_edge_df.index.isin(shortest_path[0])
+# sp_edge_df = sp_edge_df.loc[sp_edge_df['path'],:]
+# sp_edge_df['ab'] = list(zip(sp_edge_df['source'], sp_edge_df['target']))
+# sp_verts = list(sp_edge_df['ab'])
 
 
 # dim=10
