@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import random
-#import igraph as ig
+import igraph as ig
 
 
 # global constants
@@ -12,8 +12,6 @@ SCREEN_WIDTH=1440
 SCREEN_HEIGHT=900
 BLACK=(0,0,0)
 SCREEN_BG=(50,50,50)
-FLOOR=SCREEN_HEIGHT-500
-WALL_BUFFER=50
 
 class Asterion(pygame.sprite.Sprite):
     def __init__(self, img_path, screen, x, y, xv, yv, g, jf, speed):
