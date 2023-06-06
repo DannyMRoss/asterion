@@ -8,15 +8,15 @@ import igraph as ig
 
 
 # constants
-SCREEN_WIDTH=1000
+SCREEN_WIDTH=1400
 SCREEN_HEIGHT=800
-DIM=7
-WC=10
-SCALE=.3
+DIM=10
+WC=5
+SCALE=.2
 BLACK=(0,0,0)
 RED=(136,8,8)
 WHITE=(196,170,35,10)
-GREY=(52,60,36)
+GREY=(50,50,50)
 SCREEN_BG=(50,50,50)
 
 class Asterion(pygame.sprite.Sprite):
@@ -209,7 +209,6 @@ class Maze(pygame.sprite.Sprite):
         sp_edge_df['st'] = list(zip(sp_edge_df['source'], sp_edge_df['target']))
         sp_verts = list(sp_edge_df['st'])
 
-        @staticmethod
         def in_sp(v): 
             return tuple(v) in sp_verts
         
@@ -256,8 +255,7 @@ class Maze(pygame.sprite.Sprite):
             self.wallgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.wallcolor, 255, self.screen))
 
         for index, i in self.path.iterrows():
-            self.pathgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.pathcolor, 100, self.screen)) 
-
+            self.pathgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.pathcolor, 150, self.screen)) 
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -267,13 +265,13 @@ pygame.display.set_caption("Asterion")
 maze = Maze(DIM, WC, RED, RED, GREY, screen)
 maze.buildmaze()
 
-maze.platformgroup.add(Wall(0,SCREEN_HEIGHT-WC,SCREEN_WIDTH,WC,GREY,255, screen))
-maze.platformgroup.add(Wall(0,0,SCREEN_WIDTH,WC,GREY,255, screen))
-maze.wallgroup.add(Wall(0,0,WC,SCREEN_HEIGHT,GREY,255, screen))
+maze.platformgroup.add(Wall(0,SCREEN_HEIGHT-WC,SCREEN_WIDTH,WC, GREY,255, screen))
+maze.platformgroup.add(Wall(0,0,SCREEN_WIDTH,WC, GREY,255, screen))
+maze.wallgroup.add(Wall(0,0,WC,SCREEN_HEIGHT, GREY,255, screen))
 maze.wallgroup.add(Wall(SCREEN_WIDTH-WC,0,WC,SCREEN_HEIGHT,GREY,255, screen))
 
 
-asterion = Asterion("sprites/a0.png", screen, WC+WC, SCREEN_HEIGHT-(200)-WC, 0, 0, 1, 20, 10, SCALE) 
+asterion = Asterion("sprites/a0.png", screen, WC+WC, SCREEN_HEIGHT-(200)-WC, 0, 0, 1, 25, 10, SCALE) 
 
 clock = pygame.time.Clock()
 running=True
