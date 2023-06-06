@@ -8,9 +8,12 @@ import igraph as ig
 SCREEN_WIDTH=1440
 SCREEN_HEIGHT=900
 WC=10
+BLACK=(0,0,0)
+RED=(255,0,0)
+SCREEN_BG=(50,50,50)
 
 class Maze(pygame.sprite.Sprite):
-    def __init__(self, dim, WC, x, y, w, h, color, screen, platform, path):
+    def __init__(self, dim, WC, wallcolor, platformcolor, pathcolor, screen):
 
         pygame.sprite.Sprite.__init__(self)
         self.dim = dim
@@ -23,12 +26,11 @@ class Maze(pygame.sprite.Sprite):
         self.pathgroup = pygame.sprite.Group()
         self.wallgroup = pygame.sprite.Group()
         self.platformgroup = pygame.sprite.Group()
+        self.wallcolor = wallcolor
+        self.platformcolor = platformcolor
+        self.pathcolor = pathcolor
         self.screen = screen
-        self.platform = platform
-        self.path = path
 
-    def draw(self, surface):
-        surface.blit(self.image, (self.x, self.y))
     
     def buildmaze(self):
         PW = SCREEN_WIDTH / self.dim
@@ -73,8 +75,8 @@ class Maze(pygame.sprite.Sprite):
         edges = edges.rename(columns={'x': 'target_x', 'y': 'target_y'})
         edges = edges.drop(columns=['vertex_x', 'vertex_y'])
 
-        mst = edges.loc[edges['mst'],]
-        maze = edges.loc[~edges['mst'],]
+        mst = edges.loc[edges['mst']]
+        maze = edges.loc[~edges['mst']]
         maze["Platform"] = np.where(maze['source_x']==maze['target_x'], True, False)
         maze["walla_x"] = maze["source_x"]
         maze["walla_y"] = maze["source_y"] + 1
@@ -98,20 +100,21 @@ class Maze(pygame.sprite.Sprite):
         self.path = self.path.reset_index()
         self.platforms = maze.loc[maze['Platform']]
         self.platforms = self.platforms.reset_index()
-        self.walls = self.maze.loc[~maze['Platform']]
+        self.walls = maze.loc[~maze['Platform']]
         self.walls = self.walls.reset_index()
 
         for index, i in self.platforms.iterrows():
-            self.platformgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.platformcolor, self.screen, True))
+            self.platformgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.platformcolor, self.screen))
 
         for index, i in self.walls.iterrows():
-            self.wallgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.wallcolor, self.screen, False))
+            self.wallgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.wallcolor, self.screen))
 
         for index, i in self.path.iterrows():
-            self.pathgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.pathcolor, self.screen, False)) 
+            self.pathgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.pathcolor, self.screen)) 
+
 
 class Wall(pygame.sprite.Sprite):
-    def __init__(self, x, y, w, h, color, screen, platform):
+    def __init__(self, x, y, w, h, color, screen):
 
         pygame.sprite.Sprite.__init__(self)
         self.x = x
@@ -125,7 +128,6 @@ class Wall(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.left = self.x
         self.rect.top = self.y
-        self.platform = platform
 
     def draw(self, surface):
         surface.blit(self.image, (self.x, self.y))
@@ -140,21 +142,14 @@ pathgroup = pygame.sprite.Group()
 wallgroup = pygame.sprite.Group()
 platformgroup = pygame.sprite.Group()
 
-boundaries.add(Wall(0,0,SCREEN_WIDTH,WC,(0,0,0),screen,False))
-boundaries.add(Wall(0,0,WC,SCREEN_HEIGHT,(0,0,0),screen,False))
-boundaries.add(Wall(0,SCREEN_HEIGHT-WC,SCREEN_WIDTH,WC,(0,0,0),screen,False))
-boundaries.add(Wall(SCREEN_WIDTH-WC,0,WC,SCREEN_HEIGHT,(0,0,0),screen,False))
+boundaries.add(Wall(0,0,SCREEN_WIDTH,WC,(0,0,0),screen))
+boundaries.add(Wall(0,0,WC,SCREEN_HEIGHT,(0,0,0),screen))
+boundaries.add(Wall(0,SCREEN_HEIGHT-WC,SCREEN_WIDTH,WC,(0,0,0),screen))
+boundaries.add(Wall(SCREEN_WIDTH-WC,0,WC,SCREEN_HEIGHT,(0,0,0),screen))
 
-Maze = Maze(10, WC, )
-
-for index, p in platforms.iterrows():
-    platformgroup.add(Wall(p['left'], p['top'], p['width'], p['height'], (0,0,0), screen, True))
-
-for index, w in walls.iterrows():
-    wallgroup.add(Wall(w['left'], w['top'], w['width'], w['height'], (0,0,0), screen, False))
-
-for index, m in path.iterrows():
-    pathgroup.add(Wall(m['left'], m['top'], m['width'], m['height'], (255,0,0), screen, False))    
+maze = Maze(10, WC, BLACK, BLACK, RED, screen)
+maze.buildmaze()
+   
 
 clock = pygame.time.Clock()
 running=True
@@ -166,9 +161,9 @@ while running:
     
     screen.fill((255,255,255))
     boundaries.draw(screen)
-    pathgroup.draw(screen)
-    platformgroup.draw(screen)
-    wallgroup.draw(screen)
+    maze.pathgroup.draw(screen)
+    maze.platformgroup.draw(screen)
+    maze.wallgroup.draw(screen)
     pygame.display.update()
 
     clock.tick(60)
