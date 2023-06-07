@@ -114,9 +114,9 @@ class Asterion(pygame.sprite.Sprite):
             self.xv=self.speed
         elif key[pygame.K_LEFT]:
             self.xv=-self.speed
+
         if key[pygame.K_SPACE] and self.onplatform:
             self.yv = -self.jf
-
         if self.prevkey[pygame.K_SPACE] and not key[pygame.K_SPACE]:
             if self.yv < -self.shorthop:
                 self.yv = -self.shorthop
@@ -267,10 +267,10 @@ pygame.display.set_caption("Asterion")
 maze = Maze(DIM, WC, RED, 255, RED, 255, GREY, 200, screen)
 maze.buildmaze()
 
-maze.platformgroup.add(Wall(0, SCREEN_HEIGHT-WC, SCREEN_WIDTH,WC, GREY,255, screen))
-maze.platformgroup.add(Wall(0, 0, SCREEN_WIDTH, WC, GREY, 255, screen))
-maze.wallgroup.add(Wall(0, 0, WC, SCREEN_HEIGHT, GREY, 255, screen))
-maze.wallgroup.add(Wall(SCREEN_WIDTH-WC, 0, WC, SCREEN_HEIGHT,GREY, 255, screen))
+maze.platformgroup.add(Wall(0, SCREEN_HEIGHT-WC, SCREEN_WIDTH,WC, RED, 255, screen))
+maze.platformgroup.add(Wall(0, 0, SCREEN_WIDTH, WC, RED, 255, screen))
+maze.wallgroup.add(Wall(0, 0, WC, SCREEN_HEIGHT, RED, 255, screen))
+maze.wallgroup.add(Wall(SCREEN_WIDTH-WC, 0, WC, SCREEN_HEIGHT, RED, 255, screen))
 
 
 asterion = Asterion("sprites/a0.png", screen, WC+WC, SCREEN_HEIGHT-(20*WC), 0, 0, 1, 25, 10, SCALE) 
