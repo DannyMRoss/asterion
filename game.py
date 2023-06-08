@@ -8,11 +8,11 @@ import igraph as ig
 
 
 # constants
-SCREEN_WIDTH=1400
-SCREEN_HEIGHT=800
-DIM=10
-ROOMSX = 2
-ROOMSY = 2
+SCREEN_WIDTH=400
+SCREEN_HEIGHT=400
+DIM=2
+ROOMSX = 1
+ROOMSY = 1
 MAZE_WIDTH = SCREEN_WIDTH * ROOMSX
 MAZE_HEIGHT = SCREEN_HEIGHT * ROOMSY
 WC=5
@@ -104,7 +104,8 @@ class Asterion(pygame.sprite.Sprite):
         
     def pathcollision(self, path):
         hitpath = pygame.sprite.spritecollide(self, path, False)
-        self.hitpaths.add(hitpath)
+        if hitpath!=[] and hitpath[0].groups() != self.hitpaths:
+            self.hitpaths.add(hitpath)
 
 
     def move(self, walls, platforms, path, x, y):
@@ -279,16 +280,18 @@ class Maze(pygame.sprite.Sprite):
         maze["left"] = (maze["walla_x"] - ((self.dim / self.roomsx) * maze["roomx"])) * PW
         maze["top"] = (maze["walla_y"] - ((self.dim / self.roomsy) * maze["roomy"])) * WH
         maze["width"] = np.where(maze['Platform'], PW, self.WC)
-        maze["height"] = np.where(maze['Platform'], self.WC, WH+self.WC)
+        maze["height"] = np.where(maze['Platform'], self.WC, WH)
 
         
         # mst["left"] = (mst["source_x"] - () * PW) + (PW/2)
         # mst["top"] = (mst["source_y"] - () * WH) + (WH/2)
         mst["left"] = ((mst["source_x"] - ((self.dim / self.roomsx) * mst["roomx"])) * PW) + (PW/2)
         mst["top"] = ((mst["source_y"] - ((self.dim / self.roomsy) * mst["roomy"])) * WH) + (WH/2)
+        # ((6- ((5) * 1) * 1) * 165) + (165/2)
+        # (6- ((5) * 1) * 165) + (165/2)
 
         mst["width"] = np.where(mst['source_x']!=mst['target_x'], PW, self.WC)
-        mst["height"] = np.where(mst['source_x']!=mst['target_x'], self.WC, WH+self.WC)
+        mst["height"] = np.where(mst['source_x']!=mst['target_x'], self.WC, WH)
   
 
         self.path = mst.loc[mst['path']]
@@ -339,7 +342,13 @@ maze.buildmaze()
 
 
 asterion = Asterion(img_path="sprites/a0.png", scale=SCALE, screen=screen,
-                    rx=0, ry=1, x=WC+WC, y=SCREEN_HEIGHT-(20*WC), xv=0, yv=0, g=1, jf=40, shorthop=5, speed=10)
+                    rx=0, ry=1, x=WC+WC, y=SCREEN_HEIGHT-(2*WC), xv=0, yv=0, g=1, jf=40, shorthop=5, speed=10)
+
+maze.path
+maze.path[maze.path["roomx"]==0]
+maze.walls
+maze.path.loc[maze.path["source_x"]==0]
+maze.walls.loc[maze.walls["walla_x"]==1]
 
 clock = pygame.time.Clock()
 running=True
