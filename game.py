@@ -11,8 +11,12 @@ import igraph as ig
 SCREEN_WIDTH=1400
 SCREEN_HEIGHT=800
 DIM=10
+ROOMSX = 2
+ROOMSY = 2
+MAZE_WIDTH = SCREEN_WIDTH * ROOMSX
+MAZE_HEIGHT = SCREEN_HEIGHT * ROOMSY
 WC=5
-SCALE=.2
+SCALE=.4
 BLACK=(0,0,0)
 RED=(136,8,8)
 WHITE=(196,170,35,10)
@@ -25,6 +29,8 @@ class Asterion(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
 
         self.screen = screen
+        self.rx = 0
+        self.ry = 1
         self.xv = xv
         self.yv = yv
         self.image = pygame.image.load(img_path).convert_alpha()
@@ -105,6 +111,18 @@ class Asterion(pygame.sprite.Sprite):
             dx -= np.sign(dx)
 
         self.rect.move_ip([dx, dy])
+        if self.rect.left > SCREEN_WIDTH:
+            self.rx += 1
+            self.rect.move_ip(-SCREEN_WIDTH,0)
+        elif self.rect.right < 0:
+            self.rx -= 1
+            self.rect.move_ip(SCREEN_WIDTH,0)
+        if self.rect.bottom < 0:
+            self.ry += 1
+            self.rect.move_ip(0,SCREEN_HEIGHT)
+        if self.rect.top > SCREEN_HEIGHT:
+            self.ry -= 1
+            self.rect.move_ip(0,-SCREEN_HEIGHT)
         self.xv = 0
 
     def keys(self):
@@ -125,6 +143,7 @@ class Asterion(pygame.sprite.Sprite):
         
     def draw(self, surface):
         surface.blit(self.image, self.rect)
+
 
     def update(self, walls, platforms):
         self.onplatform = self.collisiony(platforms, 0, 1)
@@ -168,6 +187,9 @@ class Maze(pygame.sprite.Sprite):
         self.path = pd.DataFrame()
         self.platforms = pd.DataFrame()
         self.walls = pd.DataFrame()
+        self.roomplatforms = pd.DataFrame()
+        self.roomwalls = pd.DataFrame()
+        self.roompath = pd.DataFrame()
         self.pathgroup = pygame.sprite.Group()
         self.wallgroup = pygame.sprite.Group()
         self.platformgroup = pygame.sprite.Group()
@@ -181,8 +203,8 @@ class Maze(pygame.sprite.Sprite):
 
     
     def buildmaze(self):
-        PW = SCREEN_WIDTH / self.dim
-        WH = SCREEN_HEIGHT / self.dim
+        PW = SCREEN_WIDTH / (self.dim / ROOMSX)
+        WH = SCREEN_HEIGHT / (self.dim / ROOMSY)
 
         vdf = self.g.get_vertex_dataframe()
         vdf.index.names = ['vertexid']
@@ -233,31 +255,46 @@ class Maze(pygame.sprite.Sprite):
         maze.loc[~maze["Platform"], "walla_y"] = maze["source_y"]
         maze.loc[~maze["Platform"], "wallb_x"] = maze["target_x"]
         maze.loc[~maze["Platform"], "wallb_y"] = maze["target_y"] + 1
-        maze["left"] = maze["walla_x"]*PW
-        maze["top"] = maze["walla_y"]*WH
+        
+        maze["roomx"] = maze["walla_x"] // (DIM / ROOMSX)
+        maze["roomy"] = maze["walla_y"] // (DIM / ROOMSY)
+        
+        maze["left"] = (maze["walla_x"] - ((self.dim / ROOMSX) * maze["roomx"])) * PW
+        maze["top"] = (maze["walla_y"] - ((self.dim / ROOMSY) * maze["roomy"])) * WH
         maze["width"] = np.where(maze['Platform'], PW, self.WC)
         maze["height"] = np.where(maze['Platform'], self.WC, WH+self.WC)
 
-        mst["left"] = (mst["source_x"]*PW) + (PW/2)
-        mst["top"] = (mst["source_y"]*WH) + (WH/2)
-        mst["width"] = np.where(mst['source_x']!=mst['target_x'], PW, self.WC)
-        mst["height"] = np.where(mst['source_x']!=mst['target_x'], self.WC, WH+self.WC)
+        
+        # mst["left"] = (mst["source_x"]*PW) + (PW/2)
+        # mst["top"] = (mst["source_y"]*WH) + (WH/2)
+        # mst["width"] = np.where(mst['source_x']!=mst['target_x'], PW, self.WC)
+        # mst["height"] = np.where(mst['source_x']!=mst['target_x'], self.WC, WH+self.WC)
+        # mst["roomx"] = mst["left"] // SCREEN_WIDTH
+        # mst["roomy"] = mst["top"] // SCREEN_HEIGHT
 
-        self.path = mst.loc[mst['mst']]
-        self.path = self.path.reset_index()
+        # self.path = mst.loc[mst['mst']]
+        # self.path = self.path.reset_index()
         self.platforms = maze.loc[maze['Platform']]
         self.platforms = self.platforms.reset_index()
         self.walls = maze.loc[~maze['Platform']]
         self.walls = self.walls.reset_index()
 
-        for index, i in self.platforms.iterrows():
-            self.platformgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.platformcolor, self.platformalpha, self.screen))
+    def buildroom(self, asterion):
 
-        for index, i in self.walls.iterrows():
+        self.roomplatforms = self.platforms.loc[(self.platforms["roomx"]==asterion.rx) & (self.platforms["roomy"]==asterion.ry)]
+        self.platformgroup.empty()
+        for index, i in self.roomplatforms.iterrows():
+             self.platformgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.platformcolor, self.platformalpha, self.screen))
+
+        self.roomwalls = self.walls.loc[(self.walls["roomx"]==asterion.rx) & (self.walls["roomy"]==asterion.ry)]
+        self.wallgroup.empty()
+        for index, i in self.roomwalls.iterrows():
             self.wallgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.wallcolor, self.wallalpha, self.screen))
 
-        for index, i in self.path.iterrows():
-            self.pathgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.pathcolor, self.pathalpha, self.screen)) 
+        # self.roompath = self.path.loc[(self.path["roomx"]==asterion.rx) & (self.path["roomy"]==asterion.ry)]
+        # self.pathgroup.empty()
+        # for index, i in self.path.iterrows():
+        #     self.pathgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.pathcolor, self.pathalpha, self.screen)) 
 
 pygame.init()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -266,11 +303,6 @@ pygame.display.set_caption("Asterion")
 
 maze = Maze(DIM, WC, RED, 255, RED, 255, GREY, 200, screen)
 maze.buildmaze()
-
-maze.platformgroup.add(Wall(0, SCREEN_HEIGHT-WC, SCREEN_WIDTH,WC, RED, 255, screen))
-maze.platformgroup.add(Wall(0, 0, SCREEN_WIDTH, WC, RED, 255, screen))
-maze.wallgroup.add(Wall(0, 0, WC, SCREEN_HEIGHT, RED, 255, screen))
-maze.wallgroup.add(Wall(SCREEN_WIDTH-WC, 0, WC, SCREEN_HEIGHT, RED, 255, screen))
 
 
 asterion = Asterion("sprites/a0.png", screen, WC+WC, SCREEN_HEIGHT-(20*WC), 0, 0, 1, 25, 10, SCALE) 
@@ -285,11 +317,22 @@ while running:
     
     screen.fill(BLACK)
 
+    
     asterion.update(maze.wallgroup, maze.platformgroup)
-    maze.pathgroup.draw(screen)
+
+    #asterion.get_room()
+    maze.buildroom(asterion)
+    maze.platformgroup.add(Wall(0, SCREEN_HEIGHT-WC, SCREEN_WIDTH, WC, RED, 255, screen))
+    
+    # maze.platformgroup.add(Wall(0, 0, MAZE_WIDTH, WC, RED, 255, screen))
+    # maze.wallgroup.add(Wall(0, 0, WC, MAZE_HEIGHT, RED, 255, screen))
+    # maze.wallgroup.add(Wall(MAZE_WIDTH-WC, 0, WC, MAZE_HEIGHT, RED, 255, screen))
+    #maze.pathgroup.draw(screen)
     maze.platformgroup.draw(screen)
     maze.wallgroup.draw(screen)
     asterion.draw(screen)
     
-    pygame.display.update()
+    
+
+    pygame.display.flip()
     clock.tick(60)
