@@ -16,7 +16,7 @@ ROOMSY = 2
 MAZE_WIDTH = SCREEN_WIDTH * ROOMSX
 MAZE_HEIGHT = SCREEN_HEIGHT * ROOMSY
 WC=5
-SCALE=.4
+SCALE=.2
 BLACK=(0,0,0)
 RED=(136,8,8)
 WHITE=(196,170,35,10)
@@ -291,12 +291,24 @@ class Maze(pygame.sprite.Sprite):
         for index, i in self.roomwalls.iterrows():
             self.wallgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.wallcolor, self.wallalpha, self.screen))
 
+        if asterion.ry == ROOMSY-1:
+            maze.platformgroup.add(Wall(0, 0, SCREEN_WIDTH, WC, RED, 255, screen))
+        if asterion.ry == 0:
+            maze.platformgroup.add(Wall(0, SCREEN_HEIGHT-WC, SCREEN_WIDTH, WC, RED, 255, screen))
+        if asterion.rx == 0:
+            maze.wallgroup.add(Wall(0, 0, WC, SCREEN_HEIGHT, RED, 255, screen))
+        if asterion.rx == ROOMSX-1:
+            maze.wallgroup.add(Wall(SCREEN_WIDTH-WC, 0, WC, SCREEN_HEIGHT, RED, 255, screen))
+
+
         # self.roompath = self.path.loc[(self.path["roomx"]==asterion.rx) & (self.path["roomy"]==asterion.ry)]
         # self.pathgroup.empty()
         # for index, i in self.path.iterrows():
         #     self.pathgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.pathcolor, self.pathalpha, self.screen)) 
 
 pygame.init()
+pygame.font.init()
+font = pygame.font.SysFont('Consolas', 30)
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Asterion")
 
@@ -305,7 +317,7 @@ maze = Maze(DIM, WC, RED, 255, RED, 255, GREY, 200, screen)
 maze.buildmaze()
 
 
-asterion = Asterion("sprites/a0.png", screen, WC+WC, SCREEN_HEIGHT-(20*WC), 0, 0, 1, 25, 10, SCALE) 
+asterion = Asterion("sprites/a0.png", screen, WC+WC, SCREEN_HEIGHT-(20*WC), 0, 0, 1, 40, 10, SCALE) 
 
 clock = pygame.time.Clock()
 running=True
@@ -322,7 +334,7 @@ while running:
 
     #asterion.get_room()
     maze.buildroom(asterion)
-    maze.platformgroup.add(Wall(0, SCREEN_HEIGHT-WC, SCREEN_WIDTH, WC, RED, 255, screen))
+    
     
     # maze.platformgroup.add(Wall(0, 0, MAZE_WIDTH, WC, RED, 255, screen))
     # maze.wallgroup.add(Wall(0, 0, WC, MAZE_HEIGHT, RED, 255, screen))
