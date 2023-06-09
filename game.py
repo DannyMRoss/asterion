@@ -276,13 +276,16 @@ class Maze(pygame.sprite.Sprite):
         PW = SCREEN_WIDTH / (self.dim  / self.roomsx)
         WH = SCREEN_HEIGHT / (self.dim  / self.roomsx)
 
-        maze['roomx'] = np.where(maze['walla_x'] <=  (self.dim  / self.roomsx), 0, 1)
-        maze['roomy'] = np.where(maze['walla_y'] <=  (self.dim  / self.roomsx), 0, 1)
+        maze['roomx'] = np.where(maze['walla_x'] <  (self.dim  / self.roomsx), 0, 1)
+        maze['roomy'] = np.where(maze['walla_y'] <  (self.dim  / self.roomsx), 0, 1)
         
         maze['door'] = False
         maze.loc[((~maze['Platform']) & (maze['walla_x']==(self.dim  / self.roomsx))) | ((maze['Platform']) & (maze['walla_y']==(self.dim  / self.roomsy))), 'door'] = True 
         maze['width'] = np.where(maze['Platform'], PW, self.WC)
         maze['height'] = np.where(maze['Platform'], self.WC, WH+self.WC)
+        maze['left'] = (maze['walla_x'] - ((self.dim / self.roomsx) * maze['roomx'])) * PW
+        maze['top'] = (maze['walla_y'] - ((self.dim / self.roomsy) * maze['roomy'])) * WH
+        
         self.doors = maze.loc[['door']]
         self.doors = self.walls.reset_index()
         self.doors["roomsx"] = [np.arange(0,(self.dim  / self.roomsx))]
@@ -292,8 +295,7 @@ class Maze(pygame.sprite.Sprite):
         # mst['roomx'] = mst['source_x'] // (self.dim  / self.roomsx)
         # mst['roomy'] = mst['source_y'] // (self.dim  / self.roomsy)
         
-        maze['left'] = (maze['walla_x'] - ((self.dim / self.roomsx) * maze['roomx'])) * PW
-        maze['top'] = (maze['walla_y'] - ((self.dim / self.roomsy) * maze['roomy'])) * WH
+
         
 
         # mst['left'] = (mst['source_x'] - () * PW) + (PW/2)
@@ -327,7 +329,22 @@ class Maze(pygame.sprite.Sprite):
         for index, i in self.roomwalls.iterrows():
             self.wallgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.wallcolor, self.wallalpha, self.screen))
 
-        self.roomdoors = self.roomdoors[self.roomdoorsdf.apply(lambda row: (asterion.rx in row['roomsx']) and (asterion.ry in row['roomsy']), axis=1)]
+        self.roomdoors = self.doors[self.doors.apply(lambda row: (asterion.rx in row['roomsx']) and 
+                                                               (asterion.ry in row['roomsy']), axis=1)]
+        
+        self.roomdoors['ceiling'] = self.roomdoors.apply(lambda row: (max(row['roomsx']) == asterion.rx) or
+                                                         (max(row['roomsy'] == asterion.ry)), axis=1)
+        
+        self.roomdoors['top'] = np.where((self.roomdoors['ceiling']) and (self.roomdoors['Platform']),
+                               0, SCREEN_HEIGHT-WC)
+        self.roomdoors.loc[self.roomdoors['Platform'], 'left'] = (self.roomdoors['walla_x'] - ((self.dim / self.roomsx) * self.roomdoors['roomx'])) * PW
+
+        maze['left'] = np.where((self.roomdoors['ceiling']) and (~self.roomdoors['Platform']),
+                               SCREEN_WIDTH-WC, 0)
+
+        maze['walla_x'] * PW
+        maze['top'] = (maze['walla_y'] - ((self.dim / self.roomsy) * maze['roomy'])) * WH
+        
         #self.doors.loc[(self.doors['roomx']==asterion.rx) & (self.doors['roomy']==asterion.ry)]
         self.doorgroup.empty()
         for index, i in self.roomdoors.iterrows():
