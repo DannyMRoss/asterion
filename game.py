@@ -198,6 +198,8 @@ class Maze(pygame.sprite.Sprite):
         self.dim = dim
         self.roomsx = roomsx
         self.roomsy = roomsy
+        self.PW = SCREEN_WIDTH / (self.dim  / self.roomsx)
+        self.WH = SCREEN_HEIGHT / (self.dim  / self.roomsx)
         self.WC = wc
         self.g = ig.Graph.Lattice([dim,dim], circular=False)
         self.path = pd.DataFrame()
@@ -273,18 +275,24 @@ class Maze(pygame.sprite.Sprite):
         maze.loc[~maze['Platform'], 'wallb_x'] = maze['target_x']
         maze.loc[~maze['Platform'], 'wallb_y'] = maze['target_y'] + 1
         
-        PW = SCREEN_WIDTH / (self.dim  / self.roomsx)
-        WH = SCREEN_HEIGHT / (self.dim  / self.roomsx)
+        
 
         maze['roomx'] = np.where(maze['walla_x'] <  (self.dim  / self.roomsx), 0, 1)
         maze['roomy'] = np.where(maze['walla_y'] <  (self.dim  / self.roomsx), 0, 1)
-        
-        maze['door'] = False
         maze.loc[((~maze['Platform']) & (maze['walla_x']==(self.dim  / self.roomsx))) | ((maze['Platform']) & (maze['walla_y']==(self.dim  / self.roomsy))), 'door'] = True 
-        maze['width'] = np.where(maze['Platform'], PW, self.WC)
-        maze['height'] = np.where(maze['Platform'], self.WC, WH+self.WC)
-        maze['left'] = (maze['walla_x'] - ((self.dim / self.roomsx) * maze['roomx'])) * PW
-        maze['top'] = (maze['walla_y'] - ((self.dim / self.roomsy) * maze['roomy'])) * WH
+        maze.loc[((~maze['Platform']) & (maze['walla_x']==(self.dim  / self.roomsx))) | ((maze['Platform']) & (maze['walla_y']==(self.dim  / self.roomsy))), 'door'] = True 
+        
+        maze['doorx'] = False
+        maze['doory'] = False
+
+
+        maze['door'] = False
+
+        maze.loc[((~maze['Platform']) & (maze['walla_x']==(self.dim  / self.roomsx))) | ((maze['Platform']) & (maze['walla_y']==(self.dim  / self.roomsy))), 'door'] = True 
+        maze['width'] = np.where(maze['Platform'], self.PW, self.WC)
+        maze['height'] = np.where(maze['Platform'], self.WC, self.WH+self.WC)
+        maze['left'] = (maze['walla_x'] - ((self.dim / self.roomsx) * maze['roomx'])) * self.PW
+        maze['top'] = (maze['walla_y'] - ((self.dim / self.roomsy) * maze['roomy'])) * self.WH
         
         self.doors = maze.loc[['door']]
         self.doors = self.walls.reset_index()
@@ -337,13 +345,13 @@ class Maze(pygame.sprite.Sprite):
         
         self.roomdoors['top'] = np.where((self.roomdoors['ceiling']) and (self.roomdoors['Platform']),
                                0, SCREEN_HEIGHT-WC)
-        self.roomdoors.loc[self.roomdoors['Platform'], 'left'] = (self.roomdoors['walla_x'] - ((self.dim / self.roomsx) * self.roomdoors['roomx'])) * PW
+        self.roomdoors.loc[self.roomdoors['Platform'], 'left'] = (self.roomdoors['walla_x'] - ((self.dim / self.roomsx) * self.roomdoors['roomx'])) * self.PW
 
-        maze['left'] = np.where((self.roomdoors['ceiling']) and (~self.roomdoors['Platform']),
+        self.roomdoors['left'] = np.where((self.roomdoors['ceiling']) and (~self.roomdoors['Platform']),
                                SCREEN_WIDTH-WC, 0)
 
-        maze['walla_x'] * PW
-        maze['top'] = (maze['walla_y'] - ((self.dim / self.roomsy) * maze['roomy'])) * WH
+        # maze['walla_x'] * PW
+        # maze['top'] = (maze['walla_y'] - ((self.dim / self.roomsy) * maze['roomy'])) * WH
         
         #self.doors.loc[(self.doors['roomx']==asterion.rx) & (self.doors['roomy']==asterion.ry)]
         self.doorgroup.empty()
