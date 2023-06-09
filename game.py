@@ -2,21 +2,26 @@ import pygame
 import pygame.display
 import os
 import numpy as np
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+import pandas
+
 import pandas as pd
 import random
 import igraph as ig
 
 
 # constants
-SCREEN_WIDTH=400
-SCREEN_HEIGHT=400
-DIM=2
+SCREEN_WIDTH=1000
+SCREEN_HEIGHT=1000
+DIM=8
 ROOMSX = 2
 ROOMSY = 2
 MAZE_WIDTH = SCREEN_WIDTH * ROOMSX
 MAZE_HEIGHT = SCREEN_HEIGHT * ROOMSY
-WC=5
-SCALE=.1
+WC=10
+SCALE=.5
 BLACK=(0,0,0)
 RED=(136,8,8)
 WHITE=(196,170,35,10)
@@ -129,11 +134,11 @@ class Asterion(pygame.sprite.Sprite):
             self.hitpaths.empty()
             self.rect.move_ip(SCREEN_WIDTH,0)
         if self.rect.bottom < 0:
-            self.ry += 1
+            self.ry -= 1
             self.hitpaths.empty()
             self.rect.move_ip(0,SCREEN_HEIGHT)
         if self.rect.top > SCREEN_HEIGHT:
-            self.ry -= 1
+            self.ry += 1
             self.hitpaths.empty()
             self.rect.move_ip(0,-SCREEN_HEIGHT)
         self.xv = 0
@@ -275,46 +280,38 @@ class Maze(pygame.sprite.Sprite):
         maze.loc[~maze['Platform'], 'wallb_x'] = maze['target_x']
         maze.loc[~maze['Platform'], 'wallb_y'] = maze['target_y'] + 1
         
-        
-
         maze['roomx'] = np.where(maze['walla_x'] <  (self.dim  / self.roomsx), 0, 1)
-        maze['roomy'] = np.where(maze['walla_y'] <  (self.dim  / self.roomsx), 0, 1)
-        maze.loc[((~maze['Platform']) & (maze['walla_x']==(self.dim  / self.roomsx))) | ((maze['Platform']) & (maze['walla_y']==(self.dim  / self.roomsy))), 'door'] = True 
-        maze.loc[((~maze['Platform']) & (maze['walla_x']==(self.dim  / self.roomsx))) | ((maze['Platform']) & (maze['walla_y']==(self.dim  / self.roomsy))), 'door'] = True 
-        
+        maze['roomy'] = np.where(maze['walla_y'] <  (self.dim  / self.roomsy), 0, 1)
+
         maze['doorx'] = False
         maze['doory'] = False
-
+        maze.loc[((maze['Platform']) & (maze['walla_y']==(self.dim  / self.roomsy))), 'doory'] = True 
+        maze.loc[((~maze['Platform']) & (maze['walla_x']==(self.dim  / self.roomsx))), 'doorx'] = True 
 
         maze['door'] = False
+        maze.loc[(maze['doorx']) | (maze['doory']), 'door'] = True
 
-        maze.loc[((~maze['Platform']) & (maze['walla_x']==(self.dim  / self.roomsx))) | ((maze['Platform']) & (maze['walla_y']==(self.dim  / self.roomsy))), 'door'] = True 
-        maze['width'] = np.where(maze['Platform'], self.PW, self.WC)
-        maze['height'] = np.where(maze['Platform'], self.WC, self.WH+self.WC)
+        maze['width'] = np.where(maze['Platform'], self.PW, WC)
+        maze['height'] = np.where(maze['Platform'], WC, self.WH+WC)
         maze['left'] = (maze['walla_x'] - ((self.dim / self.roomsx) * maze['roomx'])) * self.PW
         maze['top'] = (maze['walla_y'] - ((self.dim / self.roomsy) * maze['roomy'])) * self.WH
-        
-        self.doors = maze.loc[['door']]
-        self.doors = self.walls.reset_index()
-        self.doors["roomsx"] = [np.arange(0,(self.dim  / self.roomsx))]
-        self.doors["roomsy"] = [np.arange(0,(self.dim  / self.roomsy))]
-        # maze['roomx'] = maze['walla_x'] // (self.dim  / self.roomsx)
-        # maze['roomy'] = maze['walla_y'] // (self.dim  / self.roomsy)
-        # mst['roomx'] = mst['source_x'] // (self.dim  / self.roomsx)
-        # mst['roomy'] = mst['source_y'] // (self.dim  / self.roomsy)
-        
 
-        
+        self.doors = maze.loc[maze['door']]
+        self.doors = self.doors.reset_index()
 
-        # mst['left'] = (mst['source_x'] - () * PW) + (PW/2)
-        # mst['top'] = (mst['source_y'] - () * WH) + (WH/2)
-        # mst['left'] = ((mst['source_x'] - ((self.dim / self.roomsx) * mst['roomx'])) * PW) + (PW/2)
-        # mst['top'] = ((mst['source_y'] - ((self.dim / self.roomsy) * mst['roomy'])) * WH) + (WH/2)
-        # ((6- ((5) * 1) * 1) * 165) + (165/2)
-        # (6- ((5) * 1) * 165) + (165/2)
+        # update for dim!
+        self.doors['roomsx'] = self.doors['doorx'].apply(lambda x: [0, self.roomsx-1] if x else np.nan)
+        self.doors['roomsy'] = self.doors['doory'].apply(lambda y: [0, self.roomsy-1] if y else np.nan)
 
-        # mst['width'] = np.where(mst['source_x']!=mst['target_x'], PW, self.WC)
-        # mst['height'] = np.where(mst['source_x']!=mst['target_x'], self.WC, WH+self.WC)
+
+        mst['roomx'] = np.where(mst['source_x'] <  (self.dim  / self.roomsx), 0, 1)
+        mst['roomy'] = np.where(mst['source_y'] <  (self.dim  / self.roomsy), 0, 1)
+
+        mst['left'] = ((mst['source_x'] - ((self.dim / self.roomsx) * mst['roomx'])) * self.PW) + (self.PW/2)
+        mst['top'] = ((mst['source_y'] - ((self.dim / self.roomsy) * mst['roomy'])) * self.WH) + (self.WH/2)
+
+        mst['width'] = np.where(mst['source_x']!=mst['target_x'], self.PW, self.WC)
+        mst['height'] = np.where(mst['source_x']!=mst['target_x'], self.WC, self.WH+self.WC)
   
 
         self.path = mst.loc[mst['path']]
@@ -329,50 +326,41 @@ class Maze(pygame.sprite.Sprite):
 
         self.roomplatforms = self.platforms.loc[(self.platforms['roomx']==asterion.rx) & (self.platforms['roomy']==asterion.ry)]
         self.platformgroup.empty()
-        for index, i in self.roomplatforms.iterrows():
-             self.platformgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.platformcolor, self.platformalpha, self.screen))
+        self.roomplatforms.apply(lambda row: self.platformgroup.add(Wall(row['left'], row['top'], row['width'], row['height'], self.platformcolor, self.platformalpha, self.screen)), axis=1)
 
         self.roomwalls = self.walls.loc[(self.walls['roomx']==asterion.rx) & (self.walls['roomy']==asterion.ry)]
         self.wallgroup.empty()
-        for index, i in self.roomwalls.iterrows():
-            self.wallgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.wallcolor, self.wallalpha, self.screen))
-
-        self.roomdoors = self.doors[self.doors.apply(lambda row: (asterion.rx in row['roomsx']) and 
-                                                               (asterion.ry in row['roomsy']), axis=1)]
-        
-        self.roomdoors['ceiling'] = self.roomdoors.apply(lambda row: (max(row['roomsx']) == asterion.rx) or
-                                                         (max(row['roomsy'] == asterion.ry)), axis=1)
-        
-        self.roomdoors['top'] = np.where((self.roomdoors['ceiling']) and (self.roomdoors['Platform']),
-                               0, SCREEN_HEIGHT-WC)
-        self.roomdoors.loc[self.roomdoors['Platform'], 'left'] = (self.roomdoors['walla_x'] - ((self.dim / self.roomsx) * self.roomdoors['roomx'])) * self.PW
-
-        self.roomdoors['left'] = np.where((self.roomdoors['ceiling']) and (~self.roomdoors['Platform']),
-                               SCREEN_WIDTH-WC, 0)
-
-        # maze['walla_x'] * PW
-        # maze['top'] = (maze['walla_y'] - ((self.dim / self.roomsy) * maze['roomy'])) * WH
-        
-        #self.doors.loc[(self.doors['roomx']==asterion.rx) & (self.doors['roomy']==asterion.ry)]
-        self.doorgroup.empty()
-        for index, i in self.roomdoors.iterrows():
-            self.doorgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.wallcolor, self.wallalpha, self.screen))
-
+        self.roomwalls.apply(lambda row: self.wallgroup.add(Wall(row['left'], row['top'], row['width'], row['height'], self.wallcolor, self.wallalpha, self.screen)), axis=1)
 
         self.roompath = self.path.loc[(self.path['roomx']==asterion.rx) & (self.path['roomy']==asterion.ry)]
         self.pathgroup.empty()
-        for index, i in self.path.iterrows():
-            self.pathgroup.add(Wall(i['left'], i['top'], i['width'], i['height'], self.pathcolor, self.pathalpha, self.screen)) 
+        self.roompath.apply(lambda row: self.pathgroup.add(Wall(row['left'], row['top'], row['width'], row['height'], self.pathcolor, self.pathalpha, self.screen)), axis=1)
+
+
+        #ceilings and floors, roomx set, left is set, config top
+        roomdoorsy = self.doors.loc[(self.doors['Platform']) & (self.doors['roomx'] == asterion.rx)]
+        if len(roomdoorsy) != 0:
+            roomdoorsy['ceiling'] = roomdoorsy['roomsy'].apply(lambda y: max(y) == asterion.ry)   
+            roomdoorsy['top'] = np.where(roomdoorsy['ceiling'], 0, SCREEN_HEIGHT-WC)
+            roomdoorsy.apply(lambda row: self.platformgroup.add(Wall(row['left'], row['top'], row['width'], row['height'], self.platformcolor, self.platformalpha, self.screen)), axis=1)
+
+
+        # roomy set, top is set, config left
+        roomdoorsx = self.doors.loc[(~self.doors['Platform']) & (self.doors['roomy'] == asterion.ry)]
+        if len(roomdoorsx) != 0:
+            roomdoorsx['ceiling'] = roomdoorsx['roomsx'].apply(lambda x: min(x) == asterion.rx)   
+            roomdoorsx['left'] = np.where(roomdoorsx['ceiling'], SCREEN_WIDTH-WC, 0)
+            roomdoorsx.apply(lambda row: self.wallgroup.add(Wall(row['left'], row['top'], row['width'], row['height'], self.wallcolor, self.wallalpha, self.screen)), axis=1) 
 
 
         if asterion.ry == 0:
-            maze.platformgroup.add(Wall(0, 0, SCREEN_WIDTH, WC, RED, 255, screen))
+            maze.platformgroup.add(Wall(0, 0, SCREEN_WIDTH, WC, self.platformcolor, self.platformalpha, self.screen))
         if asterion.ry == ROOMSY-1:
-            maze.platformgroup.add(Wall(0, SCREEN_HEIGHT-WC, SCREEN_WIDTH, WC, RED, 255, screen))
+            maze.platformgroup.add(Wall(0, SCREEN_HEIGHT-WC, SCREEN_WIDTH, WC, self.platformcolor, self.platformalpha, self.screen))
         if asterion.rx == 0:
-            maze.wallgroup.add(Wall(0, 0, WC, SCREEN_HEIGHT, RED, 255, screen))
+            maze.wallgroup.add(Wall(0, 0, WC, SCREEN_HEIGHT, self.wallcolor, self.wallalpha, self.screen))
         if asterion.rx == ROOMSX-1:
-            maze.wallgroup.add(Wall(SCREEN_WIDTH-WC, 0, WC, SCREEN_HEIGHT, RED, 255, screen))
+            maze.wallgroup.add(Wall(SCREEN_WIDTH-WC, 0, WC, SCREEN_HEIGHT, self.wallcolor, self.wallalpha, self.screen))
 
 
 pygame.init()
@@ -381,20 +369,13 @@ font = pygame.font.SysFont('Consolas', 30)
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Asterion")
 
-maze = Maze(screen=screen, dim=DIM, roomsx=ROOMSX, roomsy=ROOMSY, wc=WC, 
-            wallcolor=RED, wallalpha=255, platformcolor=RED, platformalpha=255, pathcolor=ORANGE, pathalpha=50)
+maze = Maze(screen=screen, dim=DIM, roomsx=ROOMSX, roomsy=ROOMSY, wc=WC, wallcolor=RED, wallalpha=255, platformcolor=RED, platformalpha=255, pathcolor=ORANGE, pathalpha=200)
 
 maze.buildmaze()
 
 
-asterion = Asterion(img_path="sprites/a0.png", scale=SCALE, screen=screen,
-                    rx=0, ry=0, x=2*WC, y=SCREEN_HEIGHT-(2*WC), xv=0, yv=0, g=1, jf=20, shorthop=5, speed=5)
+asterion = Asterion(img_path="sprites/a0.png", scale=SCALE, screen=screen, rx=0, ry=1, x=2*WC, y=SCREEN_HEIGHT-(2*WC), xv=0, yv=0, g=1, jf=35, shorthop=10, speed=30)
 
-maze.path
-maze.path[maze.path['roomx']==0]
-maze.walls
-maze.path.loc[maze.path['source_x']==0]
-maze.walls.loc[maze.walls['walla_x']==1]
 
 clock = pygame.time.Clock()
 running=True
@@ -406,17 +387,12 @@ while running:
     
     screen.fill(BLACK)
 
+    
+    
     maze.buildroom(asterion)
     asterion.update(maze.wallgroup, maze.platformgroup, maze.pathgroup)
-   
-    #asterion.get_room()
-    
-    
-    
-    # maze.platformgroup.add(Wall(0, 0, MAZE_WIDTH, WC, RED, 255, screen))
-    # maze.wallgroup.add(Wall(0, 0, WC, MAZE_HEIGHT, RED, 255, screen))
-    # maze.wallgroup.add(Wall(MAZE_WIDTH-WC, 0, WC, MAZE_HEIGHT, RED, 255, screen))
-    #maze.pathgroup.draw(screen)
+
+        
     maze.platformgroup.draw(screen)
     maze.wallgroup.draw(screen)
     asterion.hitpaths.draw(screen)
@@ -425,4 +401,4 @@ while running:
     
 
     pygame.display.flip()
-    clock.tick(60)
+    clock.tick(60)  
