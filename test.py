@@ -18,7 +18,6 @@ import igraph as ig
 # constants
 SCREEN_WIDTH=1000
 SCREEN_HEIGHT=800
-DIM=4
 WC=5
 SCALE=.3
 BLACK=(0,0,0)
@@ -145,9 +144,8 @@ def mazeroombuild(dim, dx, dy):
 
 
 
-ROOMSX=2
-ROOMSY=2
-df = mazeroombuild(DIM, [2], [2])
+
+
 #df2 = mazeroombuild(2, [6], [6])
 
 
@@ -482,14 +480,14 @@ class Maze(pygame.sprite.Sprite):
             roomdoorsx.apply(lambda row: self.wallgroup.add(Wall(row['left'], row['top'], row['width'], row['height'], self.wallcolor, self.wallalpha, self.screen)), axis=1)
 
 
-        # if asterion.ry == 0:
-        #     self.platformgroup.add(Wall(0, 0, SCREEN_WIDTH, WC, self.platformcolor, self.platformalpha, self.screen))
-        # if asterion.ry == ROOMSY-1:
-        #     self.platformgroup.add(Wall(0, SCREEN_HEIGHT-WC, SCREEN_WIDTH, WC, self.platformcolor, self.platformalpha, self.screen))
-        # if asterion.rx == 0:
-        #     self.wallgroup.add(Wall(0, 0, WC, SCREEN_HEIGHT, self.wallcolor, self.wallalpha, self.screen))
-        # if asterion.rx == ROOMSX-1:
-        #     self.wallgroup.add(Wall(SCREEN_WIDTH-WC, 0, WC, SCREEN_HEIGHT, self.wallcolor, self.wallalpha, self.screen))
+        if asterion.ry == 0:
+            self.platformgroup.add(Wall(0, 0, SCREEN_WIDTH, WC, self.platformcolor, self.platformalpha, self.screen))
+        if asterion.ry == len(DOORSY):
+            self.platformgroup.add(Wall(0, SCREEN_HEIGHT-WC, SCREEN_WIDTH, WC, self.platformcolor, self.platformalpha, self.screen))
+        if asterion.rx == 0:
+            self.wallgroup.add(Wall(0, 0, WC, SCREEN_HEIGHT, self.wallcolor, self.wallalpha, self.screen))
+        if asterion.rx == len(DOORSX):
+            self.wallgroup.add(Wall(SCREEN_WIDTH-WC, 0, WC, SCREEN_HEIGHT, self.wallcolor, self.wallalpha, self.screen))
 
 
 
@@ -500,36 +498,39 @@ font = pygame.font.SysFont('Consolas', 30)
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Asterion")
 
-
+DIM=6
+DOORSX=[3]
+DOORSY=[3]
+df = mazeroombuild(DIM, DOORSX, DOORSY)
 maze = Maze(screen=screen, dim=DIM, roomlookup=df, wc=WC, wallcolor=RED, wallalpha=255, platformcolor=RED, platformalpha=255, pathcolor=ORANGE, pathalpha=200)
 
 maze.buildmaze()
 
-asterion = Asterion(img_path="sprites/a0.png", scale=SCALE, screen=screen, rx=0, ry=0, x=2*WC, y=SCREEN_HEIGHT-(2*WC), xv=0, yv=0, g=1, jf=35, shorthop=5, speed=25)
+asterion = Asterion(img_path="sprites/a0.png", scale=SCALE, screen=screen, rx=0, ry=len(DOORSY), x=2*WC, y=SCREEN_HEIGHT-(10*WC), xv=0, yv=0, g=1, jf=35, shorthop=5, speed=25)
 
 
 
 
-#clock = pygame.time.Clock()
-# running=True
-# while running:
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             pygame.quit()
-#             running = False
+clock = pygame.time.Clock()
+running=True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            running = False
     
-#     screen.fill(BLACK)
+    screen.fill(BLACK)
 
 
-#     maze.buildroom(asterion)
-#     asterion.update(maze.wallgroup, maze.platformgroup, maze.pathgroup)
+    maze.buildroom(asterion)
+    asterion.update(maze.wallgroup, maze.platformgroup, maze.pathgroup)
 
 
-#     maze.platformgroup.draw(screen)
-#     maze.wallgroup.draw(screen)
-#     asterion.hitpaths.draw(screen)
-#     asterion.draw(screen)
+    maze.platformgroup.draw(screen)
+    maze.wallgroup.draw(screen)
+    asterion.hitpaths.draw(screen)
+    asterion.draw(screen)
 
 
-#     pygame.display.flip()
-#     clock.tick(60)
+    pygame.display.flip()
+    clock.tick(60)
