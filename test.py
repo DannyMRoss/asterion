@@ -77,8 +77,6 @@ def mazeroombuild(dim, dx, dy):
     df.loc[df['walla_x']==dim,'doory'] = 0
     df['door'] = False
     df.loc[df['doorx'] + df['doory'] > 0, 'door'] = True
-
-    #roomdf = df.loc[~df['door']]
     
     roomplatformsdf = df.copy()
     roomplatformsdf = roomplatformsdf.loc[df['doory']==0]
@@ -125,7 +123,6 @@ def mazeroombuild(dim, dx, dy):
     dfroomdoors['roomsx'] = dfroomdoors.loc[dfroomdoors['doorx']==1, 'roomx'].apply(lambda x: [x-1, x])
     dfroomdoors['roomsy'] = dfroomdoors.loc[dfroomdoors['doory']==1, 'roomy'].apply(lambda x: [x-1, x])
     
-
     dfroomdoors['walla_rx'] = (dfroomdoors.groupby('roomx')['walla_x'].rank(method='dense') - 1).astype(int)
     dfroomdoors['walla_ry'] = (dfroomdoors.groupby('roomy')['walla_y'].rank(method='dense') - 1).astype(int)
 
@@ -135,18 +132,10 @@ def mazeroombuild(dim, dx, dy):
     dfroomdoors['roomxcount'] = dfroomdoors.groupby('roomx')['roomxcount'].ffill().bfill()
     dfroomdoors['roomycount'] = dfroomdoors.groupby('roomy')['roomycount'].ffill().bfill()
 
-    # dfroomdoors['roomxcount'] = dfroomdoors.groupby('roomx')['walla_x'].transform('nunique')
-    # dfroomdoors['roomycount'] = dfroomdoors.groupby('roomy')['walla_y'].transform('nunique')
     dfroomdoors['WH'] = (SCREEN_HEIGHT / dfroomdoors['roomycount'])
     dfroomdoors['PW'] = (SCREEN_WIDTH / dfroomdoors['roomxcount'])
 
     return dfroomdoors
-
-
-
-
-
-#df2 = mazeroombuild(2, [6], [6])
 
 
 class Asterion(pygame.sprite.Sprite):
@@ -501,14 +490,11 @@ pygame.display.set_caption("Asterion")
 DIM=6
 DOORSX=[3]
 DOORSY=[3]
-df = mazeroombuild(DIM, DOORSX, DOORSY)
-maze = Maze(screen=screen, dim=DIM, roomlookup=df, wc=WC, wallcolor=RED, wallalpha=255, platformcolor=RED, platformalpha=255, pathcolor=ORANGE, pathalpha=200)
+maze = Maze(screen=screen, dim=DIM, roomlookup=mazeroombuild(DIM, DOORSX, DOORSY), wc=WC, wallcolor=RED, wallalpha=255, platformcolor=RED, platformalpha=255, pathcolor=ORANGE, pathalpha=200)
 
 maze.buildmaze()
 
 asterion = Asterion(img_path="sprites/a0.png", scale=SCALE, screen=screen, rx=0, ry=len(DOORSY), x=2*WC, y=SCREEN_HEIGHT-(10*WC), xv=0, yv=0, g=1, jf=35, shorthop=5, speed=25)
-
-
 
 
 clock = pygame.time.Clock()
