@@ -11,8 +11,8 @@ import igraph as ig
 from asterion import *
 from maze import *
 from constants import *
-
-#import mobs
+from mobs import *
+from combat import *
 
 
 pygame.init()
@@ -33,7 +33,11 @@ maze = Maze(screen=screen, dim=DIM, doorsx=DOORSX, doorsy=DOORSY, wc=WC, wallcol
 
 maze.buildmaze()
 
-asterion = Asterion(img_path="sprites/a0.png", scale=SCALE, screen=screen, rx=0, ry=len(DOORSY), x=STARTX, y=STARTY, xv=0, yv=0, g=1, jf=35, shorthop=5, speed=25)
+asterion = Asterion(img_path="sprites/a0.png", scale=SCALE, rx=0, ry=len(DOORSY), x=STARTX, y=STARTY, xv=0, yv=0, g=1, jf=35, shorthop=5, speed=25, health=5)
+
+mobs = pygame.sprite.Group()
+hunter = Mob(img_path="sprites/a0.png", scale=SCALE/2, rx=0, ry=len(DOORSY), x=STARTX, y=HEAD+WC, xv=1, yv=0, g=1, jf=35, shorthop=5, speed=25, health=1, damage=1, xpower=10)
+mobs.add(hunter)
 
 def start_menu():
 
@@ -58,6 +62,12 @@ def stats():
     TextRect.bottomleft = (WC,HEAD)
     screen.blit(TextSurf, TextRect)
 
+    TextSurf2, TextRect2 = text("Health: "+str(asterion.health), sital, GREY)
+    TextRect2.bottomleft = (SCREEN_WIDTH-(WC*15), HEAD)
+    screen.blit(TextSurf2, TextRect2)
+
+
+
 def game_loop():
     clock = pygame.time.Clock()
     running=True
@@ -78,13 +88,15 @@ def game_loop():
         maze.buildroom(asterion)
         
         asterion.update(maze.wallgroup, maze.platformgroup, maze.pathgroup, maze.gategroup)
-
+        hunter.update(maze.wallgroup, maze.platformgroup)
+        mobhit(asterion, mobs, maze.wallgroup, maze.platformgroup)
 
         maze.platformgroup.draw(screen)
         maze.wallgroup.draw(screen)
         maze.gategroup.draw(screen)
         asterion.hitpaths.draw(screen)
         asterion.draw(screen)
+        hunter.draw(screen)
 
         stats()
         

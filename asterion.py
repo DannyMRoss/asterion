@@ -1,17 +1,11 @@
-
 import pygame
 import pygame.display
 import numpy as np
-import pandas as pd
-import random
-import igraph as ig
 from constants import *
 
 class Asterion(pygame.sprite.Sprite):
-    def __init__(self, img_path, scale, screen, rx, ry, x, y, xv, yv, g, jf, shorthop, speed):
+    def __init__(self, img_path, scale, rx, ry, x, y, xv, yv, g, jf, shorthop, speed, health):
         pygame.sprite.Sprite.__init__(self)
-
-        self.screen = screen
         self.rx = rx
         self.ry = ry
         self.xv = xv
@@ -31,6 +25,7 @@ class Asterion(pygame.sprite.Sprite):
         self.hitpaths = pygame.sprite.Group()
         self.levels = 0
         self.new_level = False
+        self.health = health
   
     # @staticmethod
     # def get_min_platform(collidelist):
@@ -97,7 +92,6 @@ class Asterion(pygame.sprite.Sprite):
             self.new_level = True
             self.rect.bottomleft = (STARTX, STARTY)
             self.hitpaths.empty()
-
 
     def move(self, walls, platforms, path, gate, x, y):
         dx = x
