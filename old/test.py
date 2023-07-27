@@ -9,6 +9,8 @@ import pandas as pd
 import random
 import igraph as ig
 
+import mobs
+
 
 
 # constants
@@ -480,6 +482,9 @@ class Maze(pygame.sprite.Sprite):
 pygame.init()
 pygame.font.init()
 
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Asterion")
+
 def text(text, font, color):
         textSurface = font.render(text, True, color)
         return textSurface, textSurface.get_rect()
@@ -487,8 +492,6 @@ def text(text, font, color):
 font = pygame.font.SysFont('Consolas', 30, bold=True)
 sital = pygame.font.SysFont('Consolas', 15, bold=True, italic=True)
 
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Asterion")
 
 
 DIM=6
@@ -559,5 +562,5 @@ def game_loop():
         pygame.display.flip()
         clock.tick(60)
 
-start_menu()
-game_loop()
+# start_menu()
+# game_loop()
