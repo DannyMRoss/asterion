@@ -1,6 +1,3 @@
 # asterion
 
-requires: 
-pygame, numpy, pandas, random, igraph
-
-everything is in game.py right now
+*Ojalá me lleve a un lugar con menos galerías y menos puertas* (Borges, 1947)
