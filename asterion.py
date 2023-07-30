@@ -150,19 +150,19 @@ class Asterion(pygame.sprite.Sprite):
         if self.quiver>0:
             if key[pygame.K_d] and not self.prevkey[pygame.K_d]:
                 arrow=True
-                axv, ayv, aw, ah = 5, 0, 10, 2
+                axv, ayv, aw, ah = 10, 0, 10, 2
                 ax, ay = self.rect.right, self.rect.centery
             elif key[pygame.K_a] and not self.prevkey[pygame.K_a]:
                 arrow=True
-                axv, ayv, aw, ah = -5, 0, 10, 2
+                axv, ayv, aw, ah = -10, 0, 10, 2
                 ax, ay = self.rect.left, self.rect.centery
             elif key[pygame.K_s] and not self.prevkey[pygame.K_s]:
                 arrow=True
-                axv, ayv, aw, ah = 0, 5, 2, 10
+                axv, ayv, aw, ah = 0, 10, 2, 10
                 ax, ay = self.rect.centerx, self.rect.centery
             elif key[pygame.K_w] and not self.prevkey[pygame.K_w]:
                 arrow=True
-                axv, ayv, aw, ah = 0, -5, 2, 10
+                axv, ayv, aw, ah = 0, -10, 2, 10
                 ax, ay = self.rect.centerx, self.rect.centery
         
         if arrow:

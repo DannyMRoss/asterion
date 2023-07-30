@@ -122,22 +122,35 @@ class Walker(Mob):
 
 class Flyer(Mob):
         def __init__(self, maze, *args, **kwargs):
-            super().__init__(img_path="sprites/a0.png", scale=SCALE/1.5, rx=0, ry=len(DOORSY),
-                     x=STARTX, y=50, xv=2, yv=2, health=1, damage=1, xknock=10, yknock=10, *args, **kwargs)
+            super().__init__(img_path="sprites/a0.png", scale=SCALE/1.3, rx=0, ry=len(DOORSY),
+                     x=STARTX, y=50, xv=5, yv=5, health=1, damage=1, xknock=10, yknock=10, *args, **kwargs)
             self.maze = maze
+            
+            while True:
+                try:
+                    self.v0 = random.randint(0, DIM**2 - 1)
+                    self.v1 = random.randint(0, DIM**2 - 1)
+                    
+                    while self.v0 == self.v1:
+                        self.v1 = random.randint(0, DIM**2 - 1)
+                    self.X = self.maze.buildpath(self.v0, self.v1)
+                    break
+                except Exception as e:
+                    pass
+
             self.v0 = random.randint(0,DIM**2-1)
             self.v1 = random.randint(0,DIM**2-1)
             while self.v0 == self.v1:
                 self.v1 = random.randint(0, DIM**2 - 1)
 
-            X = self.maze.buildpath(self.v0,self.v1)
-            self.path = [X.loc[0, 'v1']]
-            self.path.extend(X['v2'].to_list())
+            self.X = self.maze.buildpath(self.v0,self.v1)
+            self.path = [self.X.loc[0, 'v1']]
+            self.path.extend(self.X['v2'].to_list())
             
             self.rect.center = self.path[0]
             self.vector = self.path[0]
             self.pathr = self.path[::-1]
-            self.path.pop(0)
+            #self.start = self.path.pop(0)
 
         def move(self):
             if len(self.path)==0:

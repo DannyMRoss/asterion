@@ -188,12 +188,56 @@ class Maze(pygame.sprite.Sprite):
         path = mst.loc[mst['path']]
         path = path.reset_index()
 
-        prev_target = path.loc[0, "target"]
+        sps = {value: index for index, value in enumerate(shortest_path[0])}
 
-        for i in range(1, len(path)):
-            if path.loc[i, "source"] != prev_target:
-                path.loc[i, ["source", "target"]] = path.loc[i, ["target", "source"]].values
-            prev_target = path.loc[i, "target"]
+        path["sps"] = path["index"].map(sps)
+
+        path = path.sort_values(by="sps").reset_index(drop=True)
+
+        def swap_columns(path):
+            s0 = path.iloc[0].loc["source"]
+            s_x, s_y = path.iloc[0].loc["source_x"], path.iloc[0].loc["source_y"]
+            
+            if (s0 == path.iloc[1].loc["target"]) or (s0 == path.iloc[1].loc["source"]):
+                path.loc[0, ["source"]] = path.iloc[0].loc["target"]
+                path.loc[0, ["target"]] = s0
+                path.loc[0, ["source_x", "source_y"]] = path.iloc[0].loc["target_x"], path.iloc[0].loc["target_y"]
+                path.loc[0, ["target_x", "target_y"]] = s_x, s_y
+
+            prev_target = path.iloc[0].loc["target"]
+
+            for i in range(1, len(path)):
+                s = path.iloc[i].loc["source"]
+                s_x, s_y = path.iloc[i].loc["source_x"], path.iloc[i].loc["source_y"]
+
+                if s != prev_target:
+                    t = path.iloc[i].loc["target"]
+                    t_x, t_y = path.iloc[i].loc["target_x"], path.iloc[i].loc["target_y"]
+
+                    path.loc[i, ["source"]] = t
+                    path.loc[i, ["target"]] = s
+                    path.loc[i, ["source_x", "source_y"]] = t_x, t_y
+                    path.loc[i, ["target_x", "target_y"]] = s_x, s_y
+
+                prev_target = path.iloc[i].loc["target"]
+
+            return path
+
+        path = swap_columns(path)
+
+        # s0 = path.iloc[0].loc["source"]
+        # if (s0 == path.iloc[1].loc["target"]) or (s0 == path.iloc[1].loc["source"]):
+        #     path.loc[0, ["source"]] = path.iloc[0].loc["target"]
+        #     path.loc[0, ["target"]] = s0
+        # prev_target = path.iloc[0].loc["target"]
+
+        # for i in range(1, len(path)-1):
+        #     s = path.iloc[i].loc["source"]
+        #     if s != prev_target:
+        #         t = path.iloc[i].loc["target"]
+        #         path.loc[i, ["source"]] = t
+        #         path.loc[i, ["target"]] = s
+        #     prev_target = path.iloc[i].loc["target"]
 
         def v1(row):
             return pygame.Vector2((row['source_x'] * row['PW']) + (row['PW']/2), (row['source_y'] * row['WH']) + (row['WH']/2))
@@ -203,12 +247,6 @@ class Maze(pygame.sprite.Sprite):
 
         path['v1'] = path.apply(v1, axis=1)
         path['v2'] = path.apply(v2, axis=1)
-
-        sps = {value: index for index, value in enumerate(shortest_path[0])}
-
-        path["sps"] = path["index"].map(sps)
-
-        path = path.sort_values(by="sps").reset_index(drop=True)
 
         return path
 
@@ -318,7 +356,7 @@ class Maze(pygame.sprite.Sprite):
 
         def add_to_group(df, group, color, alpha):
             group.empty()
-            df.apply(lambda row: group.add(Wall(row['left'], row['top'] + HEAD, row['width'], row['height'], color, alpha, self.screen)), axis=1)
+            df.apply(lambda row: group.add(Wall(row['left'], row['top'] + HEAD, row['width'] + WC, row['height']+WC, color, alpha, self.screen)), axis=1)
 
         def get_room(df, asterion):
             return df.loc[(df['roomx'] == asterion.rx) & (df['roomy'] == asterion.ry)]
